@@ -1,30 +1,16 @@
-"""
-Sistema de gestión de pedidos - Bizcotela Cakes
-Python + Tkinter (solo librería estándar, no necesita instalar nada)
-
-Requerimientos cubiertos:
-RF01 registrar clientes      RF02 registrar productos
-RF03 registrar pedidos       RF04 personalizar pedido
-RF05 calcular pedido         RF06 validar información
-RF07 consultar pedidos       RF08 actualizar estado
-RF09 generar comprobante     RF10 consultar historial
-"""
-
 import json
 import os
 import tkinter as tk
 from datetime import datetime
 from tkinter import ttk, messagebox, filedialog
 
-# ---------------------------------------------------------------------------
-# configuración y datos base
-# ---------------------------------------------------------------------------
+### DATOS BASE
 ARCHIVO = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bizcotela_datos.json")
 
 ESTADOS = ["Pendiente", "Confirmado", "En preparación", "Listo", "Entregado"]
 METODOS_PAGO = ["Yape", "Efectivo"]
 
-# nombre de la opción -> monto adicional (S/) o multiplicador (tamaño)
+#OPCION LUEGO MONTO ADICIONAL LUEGO TAMAÑO (tamaño multiplica)
 SABORES = {"Vainilla": 0, "Chocolate": 0, "Naranja": 0, "Zanahoria": 3, "Red velvet": 5}
 TAMANOS = {"Pequeño (8 porciones)": 1.0, "Mediano (15 porciones)": 1.6, "Grande (25 porciones)": 2.4}
 RELLENOS = {"Manjar": 0, "Crema pastelera": 4, "Fudge": 5, "Fresa": 5, "Lúcuma": 6}
@@ -51,9 +37,7 @@ def guardar_datos():
         messagebox.showerror("Error", "No se pudo guardar la información en el archivo.")
 
 
-# ---------------------------------------------------------------------------
-# funciones de lógica (cálculos, búsquedas, comprobante)
-# ---------------------------------------------------------------------------
+### FUNCIONES LÓGICA
 def calcular_item(precio_base, sabor, tamano, relleno, decoracion, cantidad):
     """Devuelve (precio_unitario, subtotal)."""
     unitario = precio_base * TAMANOS[tamano] + SABORES[sabor] + RELLENOS[relleno] + DECORACIONES[decoracion]
@@ -106,9 +90,7 @@ def texto_comprobante(p):
     return "\n".join(t)
 
 
-# ---------------------------------------------------------------------------
-# utilidades de interfaz
-# ---------------------------------------------------------------------------
+# interfaz colores y funciones
 COLOR_FONDO = "#f6fbfa"
 COLOR_MARRON = "#4a2423"
 COLOR_MENTA = "#b5e8dc"
@@ -150,9 +132,7 @@ def mostrar_texto(raiz, titulo, texto, guardable=False, nombre_archivo="comproba
     ttk.Button(barra, text="Cerrar", command=v.destroy).pack(side="left", padx=5)
 
 
-# ---------------------------------------------------------------------------
-# opción 1: registrar cliente (RF01, RF06)
-# ---------------------------------------------------------------------------
+# funcion registrar cliente
 def registrar_cliente(raiz):
     v = nueva_ventana(raiz, "Registrar cliente", 380, 260)
     etiqueta(v, "Nombre completo:", 0)
@@ -188,9 +168,7 @@ def registrar_cliente(raiz):
     ttk.Button(f, text="Cancelar", command=v.destroy).pack(side="left", padx=5)
 
 
-# ---------------------------------------------------------------------------
-# opción 2: registrar producto (RF02, RF06)
-# ---------------------------------------------------------------------------
+# funcion registrar producto
 def registrar_producto(raiz):
     v = nueva_ventana(raiz, "Registrar producto", 380, 300)
     etiqueta(v, "Nombre del producto:", 0)
@@ -239,9 +217,7 @@ def registrar_producto(raiz):
     ttk.Button(f, text="Cancelar", command=v.destroy).pack(side="left", padx=5)
 
 
-# ---------------------------------------------------------------------------
-# opción 3: registrar pedido (RF03, RF04, RF05, RF06)
-# ---------------------------------------------------------------------------
+# registrar pedido
 def registrar_pedido(raiz):
     if not datos["clientes"]:
         messagebox.showwarning("Sin clientes", "Primero debe registrar al menos un cliente.")
@@ -253,13 +229,13 @@ def registrar_pedido(raiz):
     v = nueva_ventana(raiz, "Registrar pedido", 760, 700)
     items = []
 
-    # --- cliente ---
+    # cliente
     etiqueta(v, "Cliente:", 0)
     lista_clientes = [f"{c['nombre']} - {c['dni']}" for c in datos["clientes"]]
     cb_cliente = ttk.Combobox(v, width=40, state="readonly", values=lista_clientes)
     cb_cliente.grid(row=0, column=1, columnspan=3, sticky="w")
 
-    # --- personalización ---
+    # personalizar
     etiqueta(v, "Producto:", 1)
     cb_prod = ttk.Combobox(v, width=28, state="readonly", values=[p["nombre"] for p in datos["productos"]])
     cb_prod.grid(row=1, column=1, sticky="w")
@@ -309,7 +285,7 @@ def registrar_pedido(raiz):
         cb.bind("<<ComboboxSelected>>", actualizar_preview)
     e_cant.bind("<KeyRelease>", actualizar_preview)
 
-    # --- tabla de ítems ---
+    # tabla items
     columnas = ("producto", "sabor", "tamano", "relleno", "decoracion", "cant", "subtotal")
     tabla = ttk.Treeview(v, columns=columnas, show="headings", height=7)
     for col, ancho, txt in [("producto", 130, "Producto"), ("sabor", 85, "Sabor"), ("tamano", 130, "Tamaño"),
@@ -363,7 +339,7 @@ def registrar_pedido(raiz):
     ttk.Button(barra_items, text="Agregar al pedido", command=agregar_item).pack(side="left", padx=(0, 6))
     ttk.Button(barra_items, text="Quitar ítem seleccionado", command=quitar_item).pack(side="left")
 
-    # --- datos finales ---
+    # datos final
     etiqueta(v, "Dedicatoria:", 8)
     e_dedic = ttk.Entry(v, width=60)
     e_dedic.grid(row=8, column=1, columnspan=3, sticky="w")
@@ -422,9 +398,7 @@ def registrar_pedido(raiz):
     ttk.Button(f, text="Cancelar", command=v.destroy).pack(side="left", padx=5)
 
 
-# ---------------------------------------------------------------------------
-# opción 4: consultar pedido (RF07)
-# ---------------------------------------------------------------------------
+# funcion consultar pedido
 def consultar_pedido(raiz):
     v = nueva_ventana(raiz, "Consultar pedido", 360, 160)
     etiqueta(v, "Código del pedido (ej. PED-0001):", 0)
@@ -445,9 +419,7 @@ def consultar_pedido(raiz):
     ttk.Button(v, text="Buscar", command=buscar).grid(row=2, column=0, sticky="w", pady=15)
 
 
-# ---------------------------------------------------------------------------
-# opción 5: actualizar estado (RF08)
-# ---------------------------------------------------------------------------
+# funcion actualizar estado
 def actualizar_estado(raiz):
     if not datos["pedidos"]:
         messagebox.showinfo("Sin pedidos", "No existen pedidos registrados.")
@@ -491,9 +463,7 @@ def actualizar_estado(raiz):
     ttk.Button(f, text="Cancelar", command=v.destroy).pack(side="left", padx=5)
 
 
-# ---------------------------------------------------------------------------
-# opción 6: generar comprobante (RF09)
-# ---------------------------------------------------------------------------
+# funcion generar comprobante
 def generar_comprobante(raiz):
     if not datos["pedidos"]:
         messagebox.showinfo("Sin pedidos", "No existen pedidos registrados.")
@@ -515,9 +485,7 @@ def generar_comprobante(raiz):
     ttk.Button(v, text="Generar", command=generar).grid(row=2, column=0, sticky="w", pady=15)
 
 
-# ---------------------------------------------------------------------------
-# opción 7: ver historial (RF10)
-# ---------------------------------------------------------------------------
+# funcion ver historial
 def ver_historial(raiz):
     if not datos["pedidos"]:
         messagebox.showinfo("Historial", "No existen pedidos registrados.")
@@ -548,18 +516,14 @@ def ver_historial(raiz):
     ttk.Button(f, text="Cerrar", command=v.destroy).pack(side="left", padx=5)
 
 
-# ---------------------------------------------------------------------------
-# opción 8: salir
-# ---------------------------------------------------------------------------
+# destroy program
 def salir(raiz):
     if messagebox.askyesno("Salir", "¿Desea cerrar el sistema?"):
         guardar_datos()
         raiz.destroy()
 
 
-# ---------------------------------------------------------------------------
-# ventana principal / menú
-# ---------------------------------------------------------------------------
+# MAIN (menu)
 def main():
     cargar_datos()
     raiz = tk.Tk()
